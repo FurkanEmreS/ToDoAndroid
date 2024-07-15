@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:text="New Task"
         android:textSize="15sp"
-        app:backgroundTint="#123FE3"
+        app:backgroundTint="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.976"

@@ -16,8 +16,8 @@
         android:layout_marginStart="20dp"
         android:layout_marginTop="20dp"
         android:text="New Task"
-        android:textColor="#070BF6"
-        android:textColorHint="#0B2BDD"
+        android:textColor="@color/black"
+        android:textColorHint="@color/black"
         android:textSize="30sp" />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -60,7 +60,7 @@
         android:layout_marginHorizontal="20dp"
         android:text="Select Time"
         android:textColor="@color/white"
-        app:backgroundTint="#123FE3" />
+        app:backgroundTint="@color/black" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/datePickerButton"
@@ -70,7 +70,7 @@
         android:layout_marginHorizontal="20dp"
         android:text="Select Date"
         android:textColor="@color/white"
-        app:backgroundTint="#123FE3" />
+        app:backgroundTint="@color/black" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/saveButton"
@@ -80,7 +80,7 @@
         android:layout_marginHorizontal="20dp"
         android:text="Save"
         android:textColor="@color/white"
-        app:backgroundTint="#123FE3" />
+        app:backgroundTint="@color/black" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/deleteButton"
@@ -90,7 +90,7 @@
         android:layout_marginHorizontal="20dp"
         android:text="Delete"
         android:textColor="@color/white"
-        app:backgroundTint="#123FE3" />
+        app:backgroundTint="#000000" />
 
 
 
