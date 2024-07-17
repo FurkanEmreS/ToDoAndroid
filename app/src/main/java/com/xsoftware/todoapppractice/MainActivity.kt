@@ -19,6 +19,8 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.PublishSubject
 import android.util.Log
+import android.widget.ImageView
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -34,6 +36,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         createNotificationChannel()
+        var leftIcon :ImageView = findViewById(R.id.left_icon)
+        leftIcon.visibility = View.GONE
+        var rightIcon :ImageView = findViewById(R.id.right_icon)
+        rightIcon.visibility = View.GONE
+
+
+
+
+
         val db = Room.databaseBuilder(applicationContext, TaskDatabase::class.java, "TaskDatabase")
             .fallbackToDestructiveMigration()
             .build()
@@ -59,8 +70,21 @@ class MainActivity : AppCompatActivity() {
         )
 
         binding.newTaskButton.setOnClickListener {
-            val bottomSheet = NewTaskSheet()
-            bottomSheet.show(supportFragmentManager, "newTaskTag")
+            if (supportFragmentManager.findFragmentByTag("newTaskTag") == null) {
+                val fragment = NewTaskSheet()
+                supportFragmentManager.beginTransaction().setCustomAnimations(
+                    R.anim.slide_in_right,
+                    R.anim.slide_out_left,
+                    R.anim.slide_in_left,
+                    R.anim.slide_out_right
+
+                )
+                    .replace(android.R.id.content, fragment, "newTaskTag")
+                    .addToBackStack(null)
+                    .commit()
+            } else {
+                supportFragmentManager.popBackStack()
+            }
         }
 
         compositeDisposable.add(
@@ -120,11 +144,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditTaskSheet(taskItem: TaskItem) {
-        val bottomSheet = NewTaskSheet()
+        val fragment = NewTaskSheet()
         val args = Bundle()
         args.putSerializable("taskItem", taskItem)
-        bottomSheet.arguments = args
-        bottomSheet.show(supportFragmentManager, "editTaskTag")
+        fragment.arguments = args
+        supportFragmentManager.beginTransaction().setCustomAnimations(
+           R.anim.left_slide_in_left,
+            R.anim.left_slide_out_right,
+            R.anim.left_slide_in_right,
+            R.anim.left_slide_out_left
+        )
+            .replace(android.R.id.content, fragment, "editTaskTag")
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun createNotificationChannel() {
@@ -144,5 +176,13 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.clear()
+    }
+
+    override fun onBackPressed() {
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+        } else {
+            super.onBackPressed()
+        }
     }
 }

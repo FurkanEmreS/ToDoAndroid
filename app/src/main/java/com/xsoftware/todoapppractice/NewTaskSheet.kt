@@ -21,9 +21,12 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.util.Log
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
 
 
-class NewTaskSheet : BottomSheetDialogFragment() {
+class NewTaskSheet : Fragment() {
     private var _binding: FragmentNewTaskSheetBinding? = null
     private val binding get() = _binding!!
     private lateinit var db: TaskDatabase
@@ -33,6 +36,8 @@ class NewTaskSheet : BottomSheetDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         db = Room.databaseBuilder(requireContext().applicationContext, TaskDatabase::class.java, "TaskDatabase")
             .fallbackToDestructiveMigration()
             .build()
@@ -41,6 +46,11 @@ class NewTaskSheet : BottomSheetDialogFragment() {
         arguments?.let {
             taskItem = it.getSerializable("taskItem") as? TaskItem
         }
+
+
+
+
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -50,6 +60,90 @@ class NewTaskSheet : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        var backIcon :ImageButton = view.findViewById(R.id.left_icon)
+        var saveIcon :ImageButton = view.findViewById(R.id.right_icon)
+        var toolbarText: TextView = view.findViewById(R.id.toolbarText)
+
+        binding.saveButton.visibility = View.GONE
+
+
+        backIcon.setOnClickListener{
+            requireActivity().supportFragmentManager.popBackStack()
+        }
+
+        toolbarText.setOnClickListener{
+            Log.d("NewTaskSheet", "Toolbar clicked")
+        }
+
+        saveIcon.setOnClickListener{
+
+            Log.d("NewTaskSheet", "Save clicked")
+            val name = binding.name.text.toString().trim()
+            val desc = binding.desc.text.toString().trim()
+            val date = binding.datePickerButton.text.toString().trim()
+            val time = binding.timePickerButton.text.toString().trim()
+
+            if (name.isEmpty()) {
+                binding.name.error = "Name is required"
+                binding.name.requestFocus()
+                return@setOnClickListener
+            }
+
+            if (desc.isEmpty()) {
+                binding.desc.error = "Description is required"
+                binding.desc.requestFocus()
+                return@setOnClickListener
+            }
+
+            if (date == "Select Date") {
+                binding.datePickerButton.error = "Date is required"
+                binding.datePickerButton.requestFocus()
+                return@setOnClickListener
+            }
+
+            if (time == "Select Time") {
+                binding.timePickerButton.error = "Time is required"
+                binding.timePickerButton.requestFocus()
+                return@setOnClickListener
+            }
+
+            val newItem = taskItem?.copy(
+                name = name,
+                desc = desc,
+                date = date,
+                time = time
+            ) ?: TaskItem(
+                name = name,
+                desc = desc,
+                date = date,
+                time = time
+            )
+
+            val completable = if (taskItem == null) {
+                taskDao.insert(newItem)
+            } else {
+                taskDao.update(newItem)
+            }
+
+            compositeDisposable.add(
+                completable
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        if (taskItem == null) {
+                            (activity as? MainActivity)?.newTaskSubject?.onNext(newItem)
+                        } else {
+                            (activity as? MainActivity)?.updateTaskSubject?.onNext(newItem)
+                        }
+                        scheduleNotification(newItem)
+                        requireActivity().supportFragmentManager.popBackStack()
+                    }, { error ->
+                        Log.e("NewTaskSheet", "Error: ${error.message}")
+                    })
+            )
+
+        }
+
 
         if (taskItem != null) {
             binding.name.setText(taskItem!!.name)
@@ -57,8 +151,13 @@ class NewTaskSheet : BottomSheetDialogFragment() {
             binding.datePickerButton.text = taskItem!!.date ?: "Select Date"
             binding.timePickerButton.text = taskItem!!.time ?: "Select Time"
             binding.taskTitle.text = "Edit Task"
+            toolbarText.text= "Edit Text"
+
+
         } else {
+            toolbarText.text = "New Task"
             binding.taskTitle.text = "New Task"
+            binding.deleteButton.visibility = View.GONE
         }
 
         binding.datePickerButton.setOnClickListener {
@@ -150,7 +249,7 @@ class NewTaskSheet : BottomSheetDialogFragment() {
                             (activity as? MainActivity)?.updateTaskSubject?.onNext(newItem)
                         }
                         scheduleNotification(newItem)
-                        dismiss()
+                        requireActivity().supportFragmentManager.popBackStack()
                     }, { error ->
                         Log.e("NewTaskSheet", "Error: ${error.message}")
                     })
@@ -165,7 +264,7 @@ class NewTaskSheet : BottomSheetDialogFragment() {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe({
                             (activity as? MainActivity)?.deleteTaskSubject?.onNext(taskItem!!)
-                            dismiss()
+                            requireActivity().supportFragmentManager.popBackStack()
                         }, { error ->
                             Log.e("NewTaskSheet", "Error: ${error.message}")
                         })
