@@ -71,25 +71,11 @@ class NewTaskSheet : Fragment() {
 
         deleteIconButton.setOnClickListener{
             taskItem?.let {
-                AlertDialog.Builder(requireContext()).apply {
-                    setTitle("Delete Task")
-                    setMessage("Are you sure you want to delete this task?")
-                    setPositiveButton("Yes") { _, _ ->
-                        compositeDisposable.add(
-                            taskDao.delete(it)
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe({
-                                    (parentFragment as? NewTaskFragment)?.deleteTaskSubject?.onNext(taskItem!!)
-                                    requireActivity().supportFragmentManager.popBackStack()
-                                }, { error ->
-                                    Log.e("NewTaskSheet", "Error: ${error.message}")
-                                })
-                        )
 
-                    }
-                    setNegativeButton("No", null)
-                }.show()
+
+showCustomDialogBox()
+
+
 
 
             }
@@ -345,6 +331,40 @@ class NewTaskSheet : Fragment() {
         super.onDestroyView()
         _binding = null
         compositeDisposable.clear()
+    }
+    private fun showCustomDialogBox() {
+        val dialog =Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(true)
+        dialog.setContentView(R.layout.layout_custom_dialog)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val tvMessage : TextView = dialog.findViewById(R.id.tvMessage)
+        val btnYes : TextView = dialog.findViewById(R.id.btnYes)
+        val btnNo : TextView = dialog.findViewById(R.id.btnNo)
+        tvMessage.text = "Are you sure you want to delete this task?"
+        btnYes.setOnClickListener {
+            compositeDisposable.add(
+                taskDao.delete(taskItem!!)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({
+                        (parentFragment as? NewTaskFragment)?.deleteTaskSubject?.onNext(taskItem!!)
+                        requireActivity().supportFragmentManager.popBackStack()
+                    }, { error ->
+                        Log.e("NewTaskSheet", "Error: ${error.message}")
+                    })
+            )
+
+            dialog.dismiss()
+
+        }
+        btnNo.setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
+
+
     }
 
 
