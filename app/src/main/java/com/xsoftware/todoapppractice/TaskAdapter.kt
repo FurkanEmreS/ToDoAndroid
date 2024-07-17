@@ -1,8 +1,15 @@
 package com.xsoftware.todoapppractice
 
+import android.app.AlertDialog
+import android.app.Dialog
+import android.content.Context
+import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.view.Window
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.xsoftware.todoapppractice.databinding.ItemCellBinding
@@ -46,10 +53,52 @@ class TaskAdapter(
         }
 
         holder.itemCellBinding.deleteButton.setOnClickListener {
-            onDeleteClick(taskItem)
+            showCustomDialogBox(holder.itemView.context,taskItem)
+
+
         }
         holder.itemView.setOnClickListener {
             onItemClick(taskItem)
         }
+
+
+
     }
+
+    private fun showCustomDialogBox(context: Context?, taskItem: TaskItem) {
+        val dialog =Dialog(context!!)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(true)
+        dialog.setContentView(R.layout.layout_custom_dialog)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val tvMessage : TextView = dialog.findViewById(R.id.tvMessage)
+        val btnYes : TextView = dialog.findViewById(R.id.btnYes)
+        val btnNo : TextView = dialog.findViewById(R.id.btnNo)
+        tvMessage.text = "Are you sure you want to delete this task?"
+        btnYes.setOnClickListener {
+            onDeleteClick(taskItem)
+            dialog.dismiss()
+
+        }
+        btnNo.setOnClickListener {
+            dialog.dismiss()
+        }
+dialog.show()
+
+
+    }
+
+    private fun showDeleteConfirmationDialog(context: Context, taskItem: TaskItem) {
+        AlertDialog.Builder(context).apply {
+            setTitle("Delete Task")
+            setMessage("Are you sure you want to delete this task?")
+            setPositiveButton("Yes") { _, _ ->
+                onDeleteClick(taskItem)
+            }
+            setNegativeButton("No", null)
+        }.show()
+    }
+
+
 }

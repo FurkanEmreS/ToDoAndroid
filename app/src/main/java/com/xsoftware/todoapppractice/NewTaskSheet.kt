@@ -18,12 +18,18 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import android.app.AlarmManager
+import android.app.AlertDialog
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.util.Log
+import android.view.Window
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+
 
 
 class NewTaskSheet : Fragment() {
@@ -37,7 +43,6 @@ class NewTaskSheet : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         db = Room.databaseBuilder(requireContext().applicationContext, TaskDatabase::class.java, "TaskDatabase")
             .fallbackToDestructiveMigration()
             .build()
@@ -46,11 +51,6 @@ class NewTaskSheet : Fragment() {
         arguments?.let {
             taskItem = it.getSerializable("taskItem") as? TaskItem
         }
-
-
-
-
-
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -63,20 +63,50 @@ class NewTaskSheet : Fragment() {
         var backIcon :ImageButton = view.findViewById(R.id.left_icon)
         var saveIcon :ImageButton = view.findViewById(R.id.right_icon)
         var toolbarText: TextView = view.findViewById(R.id.toolbarText)
+        var deleteIconButton :ImageButton = view.findViewById(R.id.delete_icon)
+
 
         binding.saveButton.visibility = View.GONE
 
 
-        backIcon.setOnClickListener{
+        deleteIconButton.setOnClickListener{
+            taskItem?.let {
+                AlertDialog.Builder(requireContext()).apply {
+                    setTitle("Delete Task")
+                    setMessage("Are you sure you want to delete this task?")
+                    setPositiveButton("Yes") { _, _ ->
+                        compositeDisposable.add(
+                            taskDao.delete(it)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe({
+                                    (parentFragment as? NewTaskFragment)?.deleteTaskSubject?.onNext(taskItem!!)
+                                    requireActivity().supportFragmentManager.popBackStack()
+                                }, { error ->
+                                    Log.e("NewTaskSheet", "Error: ${error.message}")
+                                })
+                        )
+
+                    }
+                    setNegativeButton("No", null)
+                }.show()
+
+
+            }
+
+        }
+
+
+
+        backIcon.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
         }
 
-        toolbarText.setOnClickListener{
+        toolbarText.setOnClickListener {
             Log.d("NewTaskSheet", "Toolbar clicked")
         }
 
-        saveIcon.setOnClickListener{
-
+        saveIcon.setOnClickListener {
             Log.d("NewTaskSheet", "Save clicked")
             val name = binding.name.text.toString().trim()
             val desc = binding.desc.text.toString().trim()
@@ -131,9 +161,9 @@ class NewTaskSheet : Fragment() {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
                         if (taskItem == null) {
-                            (activity as? MainActivity)?.newTaskSubject?.onNext(newItem)
+                            (parentFragment as? NewTaskFragment)?.newTaskSubject?.onNext(newItem)
                         } else {
-                            (activity as? MainActivity)?.updateTaskSubject?.onNext(newItem)
+                            (parentFragment as? NewTaskFragment)?.updateTaskSubject?.onNext(newItem)
                         }
                         scheduleNotification(newItem)
                         requireActivity().supportFragmentManager.popBackStack()
@@ -141,9 +171,7 @@ class NewTaskSheet : Fragment() {
                         Log.e("NewTaskSheet", "Error: ${error.message}")
                     })
             )
-
         }
-
 
         if (taskItem != null) {
             binding.name.setText(taskItem!!.name)
@@ -151,13 +179,14 @@ class NewTaskSheet : Fragment() {
             binding.datePickerButton.text = taskItem!!.date ?: "Select Date"
             binding.timePickerButton.text = taskItem!!.time ?: "Select Time"
             binding.taskTitle.text = "Edit Task"
-            toolbarText.text= "Edit Text"
-
-
+            toolbarText.text = "Edit Task"
+            binding.deleteButton.visibility = View.GONE
         } else {
             toolbarText.text = "New Task"
             binding.taskTitle.text = "New Task"
             binding.deleteButton.visibility = View.GONE
+            deleteIconButton.visibility = View.GONE
+
         }
 
         binding.datePickerButton.setOnClickListener {
@@ -244,9 +273,9 @@ class NewTaskSheet : Fragment() {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({
                         if (taskItem == null) {
-                            (activity as? MainActivity)?.newTaskSubject?.onNext(newItem)
+                            (parentFragment as? NewTaskFragment)?.newTaskSubject?.onNext(newItem)
                         } else {
-                            (activity as? MainActivity)?.updateTaskSubject?.onNext(newItem)
+                            (parentFragment as? NewTaskFragment)?.updateTaskSubject?.onNext(newItem)
                         }
                         scheduleNotification(newItem)
                         requireActivity().supportFragmentManager.popBackStack()
@@ -258,17 +287,27 @@ class NewTaskSheet : Fragment() {
 
         binding.deleteButton.setOnClickListener {
             taskItem?.let {
-                compositeDisposable.add(
-                    taskDao.delete(it)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe({
-                            (activity as? MainActivity)?.deleteTaskSubject?.onNext(taskItem!!)
-                            requireActivity().supportFragmentManager.popBackStack()
-                        }, { error ->
-                            Log.e("NewTaskSheet", "Error: ${error.message}")
-                        })
-                )
+                AlertDialog.Builder(requireContext()).apply {
+                    setTitle("Delete Task")
+                    setMessage("Are you sure you want to delete this task?")
+                    setPositiveButton("Yes") { _, _ ->
+                        compositeDisposable.add(
+                            taskDao.delete(it)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe({
+                                    (parentFragment as? NewTaskFragment)?.deleteTaskSubject?.onNext(taskItem!!)
+                                    requireActivity().supportFragmentManager.popBackStack()
+                                }, { error ->
+                                    Log.e("NewTaskSheet", "Error: ${error.message}")
+                                })
+                        )
+
+                    }
+                    setNegativeButton("No", null)
+                }.show()
+
+
             }
         }
     }
@@ -307,4 +346,6 @@ class NewTaskSheet : Fragment() {
         _binding = null
         compositeDisposable.clear()
     }
+
+
 }
