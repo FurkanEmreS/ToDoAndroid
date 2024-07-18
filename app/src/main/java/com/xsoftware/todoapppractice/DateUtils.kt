@@ -9,15 +9,14 @@ object DateUtils {
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private val formattedDateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
 
-    fun formatTaskDate(date: String): String {
-        val taskDate = dateFormat.parse(date)
+    fun formatTaskDate(date: Date): String {
         val today = Calendar.getInstance()
         val tomorrow = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
 
         return when {
-            isSameDay(taskDate, today.time) -> "Today"
-            isSameDay(taskDate, tomorrow.time) -> "Tomorrow"
-            else -> formattedDateFormat.format(taskDate)
+            isSameDay(date, today.time) -> "Today"
+            isSameDay(date, tomorrow.time) -> "Tomorrow"
+            else -> formattedDateFormat.format(date)
         }
     }
 

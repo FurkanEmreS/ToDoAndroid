@@ -33,7 +33,6 @@ class TaskAdapter(
     private val handler = Handler(Looper.getMainLooper())
     private val timer: Timer = Timer()
 
-
     // Verileri bir zamanlayıcı yardımıyla güncelleme
     init {
         timer.schedule(object : TimerTask() {
@@ -75,50 +74,35 @@ class TaskAdapter(
         val dateOnlyFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         // Lokal Değişkenler = TaskItem'dan tarih ve saat al
-        val taskDateStr = taskItem.date
+        val taskDate = taskItem.date
         val taskTimeStr = taskItem.time
 
-        val taskDate: Date? = try {
-            when (taskDateStr) {
-                //Eğer taskDateStr "Today" ise onu bugünün tarihi olarak al
-                "Today" -> {
-                    val today = Calendar.getInstance()
-                    dateFormat.parse("${today.get(Calendar.DAY_OF_MONTH)}/${today.get(Calendar.MONTH) + 1}/${today.get(Calendar.YEAR)} $taskTimeStr")
-                }
-                //Eğer taskDateStr "Tomorrow" ise onu yarının tarihi olarak al
-                "Tomorrow" -> {
-                    val tomorrow = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
-                    dateFormat.parse("${tomorrow.get(Calendar.DAY_OF_MONTH)}/${tomorrow.get(Calendar.MONTH) + 1}/${tomorrow.get(Calendar.YEAR)} $taskTimeStr")
-                }
-                else -> dateFormat.parse("$taskDateStr $taskTimeStr")
+        val taskDateTime: Date? = try {
+            if (taskDate != null && taskTimeStr != null) {
+                dateFormat.parse("${dateOnlyFormat.format(taskDate)} $taskTimeStr")
+            } else {
+                null
             }
-            //exception olursa null döndür
-        } catch (e: ParseException) {
+        } catch (e: Exception) {
             null
         }
 
-        if (taskDate != null) {
-
+        if (taskDateTime != null) {
             //Sadece tarihl olan format
-            val taskDateOnly = dateOnlyFormat.format(taskDate)
-
+            val taskDateOnly = dateOnlyFormat.format(taskDateTime)
             val currentDateOnly = dateOnlyFormat.format(currentDate)
-
             //sadece saat olan format
             val currentTimeOnly = timeFormat.format(currentDate)
 
             when {
                 taskDateOnly == currentDateOnly -> {
-
                     if (taskTimeStr != null && taskTimeStr <= currentTimeOnly) {
                         holder.itemCellBinding.name.setTextColor(Color.RED)
-
                     } else {
                         holder.itemCellBinding.name.setTextColor(Color.GREEN) // Bugün ve saat geçmediyse
-
                     }
                 }
-                taskDate.before(currentDate) -> {
+                taskDateTime.before(currentDate) -> {
                     holder.itemCellBinding.name.setTextColor(Color.RED) // Tarih geçtiyse
                 }
                 else -> {
@@ -128,7 +112,6 @@ class TaskAdapter(
         } else {
             holder.itemCellBinding.name.setTextColor(Color.BLACK) // Varsayılan renk
         }
-
 
         holder.itemCellBinding.completeButton.setOnClickListener {
             taskItem.isCompleted = !taskItem.isCompleted

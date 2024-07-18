@@ -30,10 +30,11 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 
-class NewTaskSheet : Fragment() {
+class NewTaskSheet : BottomSheetDialogFragment() {
     private var _binding: FragmentNewTaskSheetBinding? = null
     private val binding get() = _binding!!
     private lateinit var db: TaskDatabase
@@ -86,7 +87,7 @@ class NewTaskSheet : Fragment() {
             Log.d("NewTaskSheet", "Save clicked")
             val name = binding.name.text.toString().trim()
             val desc = binding.desc.text.toString().trim()
-            val date = binding.datePickerButton.text.toString().trim()
+            val date = binding.datePickerButton.tag as? Date
             val time = binding.timePickerButton.text.toString().trim()
 
             if (name.isEmpty()) {
@@ -101,7 +102,7 @@ class NewTaskSheet : Fragment() {
                 return@setOnClickListener
             }
 
-            if (date == "Select Date") {
+            if (date == null) {
                 binding.datePickerButton.error = "Date is required"
                 binding.datePickerButton.requestFocus()
                 return@setOnClickListener
@@ -152,7 +153,8 @@ class NewTaskSheet : Fragment() {
         if (taskItem != null) {
             binding.name.setText(taskItem!!.name)
             binding.desc.setText(taskItem!!.desc)
-            binding.datePickerButton.text = taskItem!!.date ?: "Select Date"
+            binding.datePickerButton.text = DateUtils.formatTaskDate(taskItem!!.date!!)
+            binding.datePickerButton.tag = taskItem!!.date
             binding.timePickerButton.text = taskItem!!.time ?: "Select Time"
             binding.taskTitle.text = "Edit Task"
             toolbarText.text = "Edit Task"
@@ -169,8 +171,11 @@ class NewTaskSheet : Fragment() {
             val datePickerDialog = DatePickerDialog(
                 requireContext(),
                 { _, year, month, dayOfMonth ->
-                    val date = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
+                    val date = Calendar.getInstance().apply {
+                        set(year, month, dayOfMonth)
+                    }.time
                     binding.datePickerButton.text = DateUtils.formatTaskDate(date)
+                    binding.datePickerButton.tag = date
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -232,7 +237,7 @@ class NewTaskSheet : Fragment() {
         )
 
         try {
-            val date = DateUtils.parseTaskDate(taskItem.date!!)
+            val date = taskItem.date
             val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             val taskTime = timeFormat.parse(taskItem.time!!)
 

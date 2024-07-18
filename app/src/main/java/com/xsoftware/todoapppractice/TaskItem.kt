@@ -4,6 +4,7 @@ import java.io.Serializable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Date
 
 @Entity
 data class TaskItem(
@@ -12,7 +13,7 @@ data class TaskItem(
     @ColumnInfo(name = "desc")
     var desc: String,
     @ColumnInfo(name = "date")
-    var date: String? = null,
+    var date: Date? = null,
     @ColumnInfo(name = "time")
     var time: String? = null,
     @ColumnInfo
