@@ -29,7 +29,8 @@ import android.view.Window
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 
 class NewTaskSheet : Fragment() {
@@ -60,29 +61,18 @@ class NewTaskSheet : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        var backIcon :ImageButton = view.findViewById(R.id.left_icon)
-        var saveIcon :ImageButton = view.findViewById(R.id.right_icon)
-        var toolbarText: TextView = view.findViewById(R.id.toolbarText)
-        var deleteIconButton :ImageButton = view.findViewById(R.id.delete_icon)
-
+        val backIcon: ImageButton = view.findViewById(R.id.left_icon)
+        val saveIcon: ImageButton = view.findViewById(R.id.right_icon)
+        val toolbarText: TextView = view.findViewById(R.id.toolbarText)
+        val deleteIconButton: ImageButton = view.findViewById(R.id.delete_icon)
 
         binding.saveButton.visibility = View.GONE
 
-
-        deleteIconButton.setOnClickListener{
+        deleteIconButton.setOnClickListener {
             taskItem?.let {
-
-
-showCustomDialogBox()
-
-
-
-
+                showCustomDialogBox()
             }
-
         }
-
-
 
         backIcon.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
@@ -172,7 +162,6 @@ showCustomDialogBox()
             binding.taskTitle.text = "New Task"
             binding.deleteButton.visibility = View.GONE
             deleteIconButton.visibility = View.GONE
-
         }
 
         binding.datePickerButton.setOnClickListener {
@@ -180,8 +169,8 @@ showCustomDialogBox()
             val datePickerDialog = DatePickerDialog(
                 requireContext(),
                 { _, year, month, dayOfMonth ->
-                    val date = "$dayOfMonth/${month + 1}/$year"
-                    binding.datePickerButton.text = date
+                    val date = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
+                    binding.datePickerButton.text = DateUtils.formatTaskDate(date)
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -205,72 +194,6 @@ showCustomDialogBox()
             timePickerDialog.show()
         }
 
-        binding.saveButton.setOnClickListener {
-            val name = binding.name.text.toString().trim()
-            val desc = binding.desc.text.toString().trim()
-            val date = binding.datePickerButton.text.toString().trim()
-            val time = binding.timePickerButton.text.toString().trim()
-
-            if (name.isEmpty()) {
-                binding.name.error = "Name is required"
-                binding.name.requestFocus()
-                return@setOnClickListener
-            }
-
-            if (desc.isEmpty()) {
-                binding.desc.error = "Description is required"
-                binding.desc.requestFocus()
-                return@setOnClickListener
-            }
-
-            if (date == "Select Date") {
-                binding.datePickerButton.error = "Date is required"
-                binding.datePickerButton.requestFocus()
-                return@setOnClickListener
-            }
-
-            if (time == "Select Time") {
-                binding.timePickerButton.error = "Time is required"
-                binding.timePickerButton.requestFocus()
-                return@setOnClickListener
-            }
-
-            val newItem = taskItem?.copy(
-                name = name,
-                desc = desc,
-                date = date,
-                time = time
-            ) ?: TaskItem(
-                name = name,
-                desc = desc,
-                date = date,
-                time = time
-            )
-
-            val completable = if (taskItem == null) {
-                taskDao.insert(newItem)
-            } else {
-                taskDao.update(newItem)
-            }
-
-            compositeDisposable.add(
-                completable
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        if (taskItem == null) {
-                            (parentFragment as? NewTaskFragment)?.newTaskSubject?.onNext(newItem)
-                        } else {
-                            (parentFragment as? NewTaskFragment)?.updateTaskSubject?.onNext(newItem)
-                        }
-                        scheduleNotification(newItem)
-                        requireActivity().supportFragmentManager.popBackStack()
-                    }, { error ->
-                        Log.e("NewTaskSheet", "Error: ${error.message}")
-                    })
-            )
-        }
-
         binding.deleteButton.setOnClickListener {
             taskItem?.let {
                 AlertDialog.Builder(requireContext()).apply {
@@ -288,12 +211,9 @@ showCustomDialogBox()
                                     Log.e("NewTaskSheet", "Error: ${error.message}")
                                 })
                         )
-
                     }
                     setNegativeButton("No", null)
                 }.show()
-
-
             }
         }
     }
@@ -311,20 +231,26 @@ showCustomDialogBox()
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val dateParts = taskItem.date?.split("/")?.map { it.toInt() } ?: return
-        val timeParts = taskItem.time?.split(":")?.map { it.toInt() } ?: return
+        try {
+            val date = DateUtils.parseTaskDate(taskItem.date!!)
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val taskTime = timeFormat.parse(taskItem.time!!)
 
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.YEAR, dateParts[2])
-            set(Calendar.MONTH, dateParts[1] - 1)
-            set(Calendar.DAY_OF_MONTH, dateParts[0])
-            set(Calendar.HOUR_OF_DAY, timeParts[0])
-            set(Calendar.MINUTE, timeParts[1])
-            set(Calendar.SECOND, 0)
+            val calendar = Calendar.getInstance().apply {
+                time = date
+                val timeCalendar = Calendar.getInstance().apply {
+                    time = taskTime
+                }
+                set(Calendar.HOUR_OF_DAY, timeCalendar.get(Calendar.HOUR_OF_DAY))
+                set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE))
+                set(Calendar.SECOND, 0)
+            }
+
+            val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-
-        val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
     }
 
     override fun onDestroyView() {
@@ -332,16 +258,17 @@ showCustomDialogBox()
         _binding = null
         compositeDisposable.clear()
     }
+
     private fun showCustomDialogBox() {
-        val dialog =Dialog(requireContext())
+        val dialog = Dialog(requireContext())
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(true)
         dialog.setContentView(R.layout.layout_custom_dialog)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-        val tvMessage : TextView = dialog.findViewById(R.id.tvMessage)
-        val btnYes : TextView = dialog.findViewById(R.id.btnYes)
-        val btnNo : TextView = dialog.findViewById(R.id.btnNo)
+        val tvMessage: TextView = dialog.findViewById(R.id.tvMessage)
+        val btnYes: TextView = dialog.findViewById(R.id.btnYes)
+        val btnNo: TextView = dialog.findViewById(R.id.btnNo)
         tvMessage.text = "Are you sure you want to delete this task?"
         btnYes.setOnClickListener {
             compositeDisposable.add(
@@ -355,17 +282,11 @@ showCustomDialogBox()
                         Log.e("NewTaskSheet", "Error: ${error.message}")
                     })
             )
-
             dialog.dismiss()
-
         }
         btnNo.setOnClickListener {
             dialog.dismiss()
         }
         dialog.show()
-
-
     }
-
-
 }
