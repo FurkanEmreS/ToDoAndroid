@@ -38,6 +38,8 @@ class NewTaskSheet : Fragment() {
     private val binding get() = _binding!!
     private var taskItem: TaskItem? = null
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -56,7 +58,20 @@ class NewTaskSheet : Fragment() {
         val backIcon: ImageButton = view.findViewById(R.id.left_icon)
         val saveIcon: ImageButton = view.findViewById(R.id.right_icon)
         val toolbarText: TextView = view.findViewById(R.id.toolbarText)
+        val exitIconButton: ImageButton = view.findViewById(R.id.exit_icon)
         val deleteIconButton: ImageButton = view.findViewById(R.id.delete_icon)
+        val timePickerButton = binding.timePickerButton
+        val datePickerButton = binding.datePickerButton
+        exitIconButton.visibility = View.GONE
+        datePickerButton.text = getString(R.string.select_date)
+        timePickerButton.text = getString(R.string.select_time)
+        val name = binding.name
+        val desc = binding.desc
+        name.hint = getString(R.string.task_title)
+        desc.hint = getString(R.string.task_description)
+
+
+
 
         binding.saveButton.visibility = View.GONE
 
@@ -93,19 +108,19 @@ class NewTaskSheet : Fragment() {
                 return@setOnClickListener
             }
 
-            if (date == "Select Date") {
+            if (date == getString(R.string.select_date)) {
                 binding.datePickerButton.error = "Date is required"
                 binding.datePickerButton.requestFocus()
                 return@setOnClickListener
             }
 
-            if (time == "Select Time") {
+            if (time == getString(R.string.select_time)) {
                 binding.timePickerButton.error = "Time is required"
                 binding.timePickerButton.requestFocus()
                 return@setOnClickListener
             }
 
-            val parsedDate = DateUtils.parseDate(date)
+            val parsedDate = DateUtils.parseDate(requireContext(), date)
 
             val newItem = taskItem?.copy(
                 name = name,
@@ -146,14 +161,14 @@ class NewTaskSheet : Fragment() {
         if (taskItem != null) {
             binding.name.setText(taskItem!!.name)
             binding.desc.setText(taskItem!!.desc)
-            binding.datePickerButton.text = taskItem!!.date?.let { DateUtils.formatDate(it) } ?: "Select Date"
-            binding.timePickerButton.text = taskItem!!.time ?: "Select Time"
-            binding.taskTitle.text = "Edit Task"
-            toolbarText.text = "Edit Task"
+            binding.datePickerButton.text = taskItem!!.date?.let { DateUtils.formatDate(requireContext(), it) } ?: getString(R.string.select_date)
+            binding.timePickerButton.text = taskItem!!.time ?: getString(R.string.select_time)
+            binding.taskTitle.text = getString(R.string.edit_task)
+            toolbarText.text = getString(R.string.edit_task)
             binding.deleteButton.visibility = View.GONE
         } else {
-            toolbarText.text = "New Task"
-            binding.taskTitle.text = "New Task"
+            toolbarText.text = getString(R.string.new_task)
+            binding.taskTitle.text = getString(R.string.new_task)
             binding.deleteButton.visibility = View.GONE
             deleteIconButton.visibility = View.GONE
         }
@@ -164,7 +179,7 @@ class NewTaskSheet : Fragment() {
                 requireContext(),
                 { _, year, month, dayOfMonth ->
                     val date = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
-                    binding.datePickerButton.text = DateUtils.formatDate(DateUtils.parseDate(date)!!)
+                    binding.datePickerButton.text = DateUtils.formatDate(requireContext(), DateUtils.parseDate(requireContext(), date)!!)
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -191,9 +206,9 @@ class NewTaskSheet : Fragment() {
         binding.deleteButton.setOnClickListener {
             taskItem?.let {
                 AlertDialog.Builder(requireContext()).apply {
-                    setTitle("Delete Task")
-                    setMessage("Are you sure you want to delete this task?")
-                    setPositiveButton("Yes") { _, _ ->
+                    setTitle(getString(R.string.title_delete))
+                    setMessage(getString(R.string.delete_alert))
+                    setPositiveButton(getString(R.string.yes)) { _, _ ->
                         TaskRepository.deleteTask(it.id, {
                             (parentFragment as? NewTaskFragment)?.taskList?.remove(it)
                             (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
@@ -202,7 +217,7 @@ class NewTaskSheet : Fragment() {
                             Log.e("NewTaskSheet", "Error: ${error.message}")
                         })
                     }
-                    setNegativeButton("No", null)
+                    setNegativeButton(getString(R.string.no), null)
                 }.show()
             }
         }
@@ -255,15 +270,19 @@ class NewTaskSheet : Fragment() {
         val tvMessage: TextView = dialog.findViewById(R.id.tvMessage)
         val btnYes: TextView = dialog.findViewById(R.id.btnYes)
         val btnNo: TextView = dialog.findViewById(R.id.btnNo)
-        tvMessage.text = "Are you sure you want to delete this task?"
+        btnYes.text = getString(R.string.yes)
+        btnNo.text = getString(R.string.no)
+        tvMessage.text = getString(R.string.delete_alert)
         btnYes.setOnClickListener {
-            TaskRepository.deleteTask(taskItem!!.id, {
-                (parentFragment as? NewTaskFragment)?.taskList?.remove(taskItem!!)
-                (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
-                requireActivity().supportFragmentManager.popBackStack()
-            }, { error ->
-                Log.e("NewTaskSheet", "Error: ${error.message}")
-            })
+            taskItem?.let {
+                TaskRepository.deleteTask(it.id, {
+                    (parentFragment as? NewTaskFragment)?.taskList?.remove(it)
+                    (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
+                    requireActivity().supportFragmentManager.popBackStack()
+                }, { error ->
+                    Log.e("NewTaskSheet", "Error: ${error.message}")
+                })
+            }
             dialog.dismiss()
         }
         btnNo.setOnClickListener {

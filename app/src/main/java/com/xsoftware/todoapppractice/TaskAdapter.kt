@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.drawable.ColorDrawable
 import android.os.Handler
 import android.os.Looper
+
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.Window
@@ -92,7 +93,7 @@ class TaskAdapter(
         }
 
         holder.itemCellBinding.deleteButton.setOnClickListener {
-            showCustomDialogBox(holder.itemView.context, taskItem)
+            showCustomDialogBox(holder.itemView.context, taskItem) // Burada holder.itemView.context kullanıyoruz
         }
 
         holder.itemView.setOnClickListener {
@@ -100,8 +101,8 @@ class TaskAdapter(
         }
     }
 
-    private fun showCustomDialogBox(context: Context?, taskItem: TaskItem) {
-        val dialog = Dialog(context!!)
+    private fun showCustomDialogBox(context: Context, taskItem: TaskItem) {
+        val dialog = Dialog(context)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(true)
         dialog.setContentView(R.layout.layout_custom_dialog)
@@ -110,7 +111,9 @@ class TaskAdapter(
         val tvMessage: TextView = dialog.findViewById(R.id.tvMessage)
         val btnYes: TextView = dialog.findViewById(R.id.btnYes)
         val btnNo: TextView = dialog.findViewById(R.id.btnNo)
-        tvMessage.text = "Are you sure you want to delete this task?"
+        btnYes.text = context.getString(R.string.yes)
+        btnNo.text = context.getString(R.string.no)
+        tvMessage.text = context.getString(R.string.delete_alert) // Burada context.getString kullanıyoruz
         btnYes.setOnClickListener {
             onDeleteClick(taskItem)
             dialog.dismiss()

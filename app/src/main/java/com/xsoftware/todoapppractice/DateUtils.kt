@@ -1,28 +1,31 @@
 package com.xsoftware.todoapppractice
-
+import android.content.Context
+import android.provider.Settings.Global.getString
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+
+
 object DateUtils {
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
-    fun formatDate(date: Date): String {
+    fun formatDate(context: Context, date: Date): String {
         val today = Calendar.getInstance()
         val tomorrow = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
 
         return when {
-            isSameDay(date, today.time) -> "Today"
-            isSameDay(date, tomorrow.time) -> "Tomorrow"
+            isSameDay(date, today.time) -> context.getString(R.string.today)
+            isSameDay(date, tomorrow.time) -> context.getString(R.string.tomorrow)
             else -> dateFormat.format(date)
         }
     }
 
-    fun parseDate(date: String): Date? {
+    fun parseDate(context: Context, date: String): Date? {
         return when (date) {
-            "Today" -> Calendar.getInstance().time
-            "Tomorrow" -> Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }.time
+            context.getString(R.string.today) -> Calendar.getInstance().time
+            context.getString(R.string.tomorrow) -> Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }.time
             else -> dateFormat.parse(date)
         }
     }

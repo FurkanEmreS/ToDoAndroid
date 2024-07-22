@@ -25,37 +25,37 @@ class SignUpTabFragment : Fragment() {
         signupclick.setOnClickListener {
             val email = binding.signupEmail.text.toString()
             val pass = binding.signupPassword.text.toString()
-            val passagain= binding.signupConfirm.text.toString()
+            val passagain = binding.signupConfirm.text.toString()
 
             if (pass == passagain) {
                 if (email.isNotEmpty() && pass.isNotEmpty() && passagain.isNotEmpty()) {
                     auth.createUserWithEmailAndPassword(email, pass).addOnSuccessListener {
-                        Toast.makeText(context,"Account Created Successfully",Toast.LENGTH_SHORT).show()
-                        navigateLoginTabFragment()
+                        Toast.makeText(context, "Account Created Successfully", Toast.LENGTH_SHORT).show()
+                        navigateToNewTaskFragment()
                     }.addOnFailureListener {
-                        Toast.makeText(context,"Account creation failed",Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Account creation failed", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(context,"Please fill in all fields",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(context,"Passwords do not match",Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun navigateLoginTabFragment() {
+    private fun navigateToNewTaskFragment() {
         val fragmentContainerId = (view?.parent as? ViewGroup)?.id ?: R.id.fragment_container
 
-        if (parentFragmentManager.findFragmentByTag("LoginTabFragmentTag") == null) {
-            val fragment = LoginTabFragment()
+        if (parentFragmentManager.findFragmentByTag("newTaskFragmentTag") == null) {
+            val fragment = NewTaskFragment()
             parentFragmentManager.beginTransaction().setCustomAnimations(
                 R.anim.slide_in_right,
                 R.anim.slide_out_left,
                 R.anim.slide_in_left,
                 R.anim.slide_out_right
             )
-                .replace(fragmentContainerId, fragment, "LoginTabFragmentTag")
+                .replace(fragmentContainerId, fragment, "newTaskFragmentTag")
                 .addToBackStack(null)
                 .commit()
         } else {

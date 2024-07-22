@@ -1,19 +1,26 @@
 package com.xsoftware.todoapppractice
 
+import android.app.Dialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
+import com.google.firebase.auth.FirebaseAuth
 import com.xsoftware.todoapppractice.databinding.FragmentNewTaskBinding
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -46,6 +53,13 @@ class NewTaskFragment : Fragment() {
         rightIcon.visibility = View.GONE
         var deleteImageIcon: ImageButton = view.findViewById(R.id.delete_icon)
         deleteImageIcon.visibility = View.GONE
+        var exiticon  :ImageButton= view.findViewById(R.id.exit_icon)
+        val newTaskButton = binding.newTaskButton
+        val quitButton = binding.exitButton
+        quitButton.visibility = View.GONE
+        newTaskButton.text = getString(R.string.new_task)
+        quitButton.text = getString(R.string.quit)
+
 
         taskAdapter = TaskAdapter(taskList, { taskItem ->
             deleteTask(taskItem)
@@ -78,6 +92,14 @@ class NewTaskFragment : Fragment() {
             } else {
                 parentFragmentManager.popBackStack()
             }
+        }
+
+        binding.exitButton.setOnClickListener {
+            showCustomDialogBox()
+
+        }
+        exiticon.setOnClickListener {
+            showCustomDialogBox()
         }
     }
 
@@ -122,6 +144,34 @@ class NewTaskFragment : Fragment() {
             .replace(R.id.fragment_container, fragment, "editTaskTag")
             .addToBackStack(null)
             .commit()
+    }
+
+
+    private fun showCustomDialogBox() {
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(true)
+        dialog.setContentView(R.layout.layout_custom_dialog)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val tvMessage: TextView = dialog.findViewById(R.id.tvMessage)
+        val btnYes: TextView = dialog.findViewById(R.id.btnYes)
+        val btnNo: TextView = dialog.findViewById(R.id.btnNo)
+        btnYes.text = getString(R.string.yes)
+        btnNo.text = getString(R.string.no)
+        tvMessage.text = getString(R.string.quit_alert)
+        btnYes.setOnClickListener {
+            FirebaseAuth.getInstance().signOut()
+            val intent = Intent(activity, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+
+            dialog.dismiss()
+        }
+        btnNo.setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     override fun onDestroyView() {

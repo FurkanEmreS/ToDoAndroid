@@ -3,10 +3,9 @@ package com.xsoftware.todoapppractice
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-
 object TaskRepository {
     private val db = FirebaseFirestore.getInstance()
-    private val user = FirebaseAuth.getInstance().currentUser
+    private val user get() = FirebaseAuth.getInstance().currentUser
 
     fun addTask(task: TaskItem, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         user?.let {
