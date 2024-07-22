@@ -16,10 +16,14 @@
     <string name="confirm_password">Şifrenizi Onaylayın</string>
     <string name="delete_alert">Görevi Silmek İstediğinize Emin Misiniz ?</string>
     <string name="quit_alert">Hesabınızdan Çıkmak İstediğinize Emin Misiniz ?</string>
-    <string name="today">Bugün</string>
-    <string name="tomorrow">Yarın</string>
+    <string name="today"> Bugün</string>
+    <string name="tomorrow"> Yarın</string>
     <string name="title_delete">Görevi Sil</string>
     <string name="title_quit">Çıkış</string>
     <string name="yes">Evet</string>
     <string name="no">Hayır</string>
+    <string name="name_required">Başlık Gerekli</string>
+    <string name="desc_required">Açıklama Gerekli</string>
+    <string name="date_required">Tarih Gerekli</string>
+    <string name="time_required">Saat Gerekli</string>
 </resources>

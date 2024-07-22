@@ -52,8 +52,8 @@ class NewTaskFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val backIcon: ImageButton = view.findViewById(R.id.left_icon)
-        val saveIcon: ImageButton = view.findViewById(R.id.right_icon)
+        val backIcon: ImageButton = view.findViewById(R.id.back_icon)
+        val saveIcon: ImageButton = view.findViewById(R.id.save_icon)
         val toolbarText: TextView = view.findViewById(R.id.toolbarText)
         val exitIconButton: ImageButton = view.findViewById(R.id.exit_icon)
         val deleteIconButton: ImageButton = view.findViewById(R.id.delete_icon)
@@ -94,25 +94,25 @@ class NewTaskFragment : Fragment() {
             val time = binding.timePickerButton.text.toString().trim()
 
             if (name.isEmpty()) {
-                binding.name.error = "Name is required"
+                binding.name.error = getString(R.string.name_required)
                 binding.name.requestFocus()
                 return@setOnClickListener
             }
 
             if (desc.isEmpty()) {
-                binding.desc.error = "Description is required"
+                binding.desc.error = getString(R.string.desc_required)
                 binding.desc.requestFocus()
                 return@setOnClickListener
             }
 
             if (date == getString(R.string.select_date)) {
-                binding.datePickerButton.error = "Date is required"
+                binding.datePickerButton.error = getString(R.string.date_required)
                 binding.datePickerButton.requestFocus()
                 return@setOnClickListener
             }
 
             if (time == getString(R.string.select_time)) {
-                binding.timePickerButton.error = "Time is required"
+                binding.timePickerButton.error = getString(R.string.time_required)
                 binding.timePickerButton.requestFocus()
                 return@setOnClickListener
             }

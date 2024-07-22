@@ -40,10 +40,10 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        var leftIcon: ImageView = view.findViewById(R.id.left_icon)
-        leftIcon.visibility = View.GONE
-        var rightIcon: ImageView = view.findViewById(R.id.right_icon)
-        rightIcon.visibility = View.GONE
+        var backIcon: ImageView = view.findViewById(R.id.back_icon)
+        backIcon.visibility = View.GONE
+        var saveIcon: ImageView = view.findViewById(R.id.save_icon)
+        saveIcon.visibility = View.GONE
         var deleteImageIcon: ImageButton = view.findViewById(R.id.delete_icon)
         deleteImageIcon.visibility = View.GONE
         var exiticon  :ImageButton= view.findViewById(R.id.exit_icon)

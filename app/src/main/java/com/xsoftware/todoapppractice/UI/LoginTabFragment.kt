@@ -22,8 +22,18 @@ class LoginTabFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         auth = Firebase.auth
 
+
+        //Localizing the text of the buttons
         val signupButton = binding.signupButton
         val loginButton = binding.loginButton
+        val email = binding.loginEmail
+        val password = binding.loginPassword
+        email.hint = getString(R.string.email)
+        password.hint = getString(R.string.password)
+        signupButton.text = getString(R.string.Signup)
+        loginButton.text = getString(R.string.login)
+
+
 
         signupButton.setOnClickListener {
             navigateSignUpFragment()
