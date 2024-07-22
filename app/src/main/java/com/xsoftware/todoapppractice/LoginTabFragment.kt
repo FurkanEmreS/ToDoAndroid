@@ -25,36 +25,25 @@ class LoginTabFragment : Fragment() {
         val signupButton = binding.signupButton
         val loginButton = binding.loginButton
 
-
         signupButton.setOnClickListener {
             navigateSignUpFragment()
         }
 
         loginButton.setOnClickListener {
-       val email = binding.loginEmail.text.toString()
+            val email = binding.loginEmail.text.toString()
             val pass = binding.loginPassword.text.toString()
 
-            if(email.isNotEmpty() && pass.isNotEmpty()){
-                auth.signInWithEmailAndPassword(email,pass).addOnSuccessListener {
+            if (email.isNotEmpty() && pass.isNotEmpty()) {
+                auth.signInWithEmailAndPassword(email, pass).addOnSuccessListener {
                     Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                     navigateToNewTaskFragment()
                 }.addOnFailureListener {
                     Toast.makeText(context, it.localizedMessage, Toast.LENGTH_SHORT).show()
                 }
-
-            }else {
+            } else {
                 Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
-
             }
-
-
-
-
-
-
         }
-
-
     }
 
     private fun navigateToNewTaskFragment() {
@@ -106,9 +95,5 @@ class LoginTabFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-
-
     }
-
-
 }

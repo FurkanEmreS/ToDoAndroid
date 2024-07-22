@@ -36,18 +36,10 @@ import java.util.Locale
 class NewTaskSheet : Fragment() {
     private var _binding: FragmentNewTaskSheetBinding? = null
     private val binding get() = _binding!!
-    private lateinit var db: TaskDatabase
-    private lateinit var taskDao: TaskDao
-    private val compositeDisposable = CompositeDisposable()
     private var taskItem: TaskItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        db = Room.databaseBuilder(requireContext().applicationContext, TaskDatabase::class.java, "TaskDatabase")
-            .fallbackToDestructiveMigration()
-            .build()
-        taskDao = db.taskDao()
 
         arguments?.let {
             taskItem = it.getSerializable("taskItem") as? TaskItem
@@ -113,46 +105,48 @@ class NewTaskSheet : Fragment() {
                 return@setOnClickListener
             }
 
+            val parsedDate = DateUtils.parseDate(date)
+
             val newItem = taskItem?.copy(
                 name = name,
                 desc = desc,
-                date = date,
+                date = parsedDate,
                 time = time
             ) ?: TaskItem(
                 name = name,
                 desc = desc,
-                date = date,
+                date = parsedDate,
                 time = time
             )
 
-            val completable = if (taskItem == null) {
-                taskDao.insert(newItem)
+            if (taskItem == null) {
+                TaskRepository.addTask(newItem, {
+                    (parentFragment as? NewTaskFragment)?.taskList?.add(newItem)
+                    (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyItemInserted((parentFragment as? NewTaskFragment)?.taskList?.size ?: 0 - 1)
+                    scheduleNotification(newItem)
+                    requireActivity().supportFragmentManager.popBackStack()
+                }, { error ->
+                    Log.e("NewTaskSheet", "Error: ${error.message}")
+                })
             } else {
-                taskDao.update(newItem)
+                TaskRepository.updateTask(newItem, {
+                    val index = (parentFragment as? NewTaskFragment)?.taskList?.indexOfFirst { it.id == newItem.id }
+                    if (index != null && index != -1) {
+                        (parentFragment as? NewTaskFragment)?.taskList?.set(index, newItem)
+                        (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyItemChanged(index)
+                    }
+                    scheduleNotification(newItem)
+                    requireActivity().supportFragmentManager.popBackStack()
+                }, { error ->
+                    Log.e("NewTaskSheet", "Error: ${error.message}")
+                })
             }
-
-            compositeDisposable.add(
-                completable
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        if (taskItem == null) {
-                            (parentFragment as? NewTaskFragment)?.newTaskSubject?.onNext(newItem)
-                        } else {
-                            (parentFragment as? NewTaskFragment)?.updateTaskSubject?.onNext(newItem)
-                        }
-                        scheduleNotification(newItem)
-                        requireActivity().supportFragmentManager.popBackStack()
-                    }, { error ->
-                        Log.e("NewTaskSheet", "Error: ${error.message}")
-                    })
-            )
         }
 
         if (taskItem != null) {
             binding.name.setText(taskItem!!.name)
             binding.desc.setText(taskItem!!.desc)
-            binding.datePickerButton.text = taskItem!!.date ?: "Select Date"
+            binding.datePickerButton.text = taskItem!!.date?.let { DateUtils.formatDate(it) } ?: "Select Date"
             binding.timePickerButton.text = taskItem!!.time ?: "Select Time"
             binding.taskTitle.text = "Edit Task"
             toolbarText.text = "Edit Task"
@@ -170,7 +164,7 @@ class NewTaskSheet : Fragment() {
                 requireContext(),
                 { _, year, month, dayOfMonth ->
                     val date = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
-                    binding.datePickerButton.text = DateUtils.formatTaskDate(date)
+                    binding.datePickerButton.text = DateUtils.formatDate(DateUtils.parseDate(date)!!)
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -200,17 +194,13 @@ class NewTaskSheet : Fragment() {
                     setTitle("Delete Task")
                     setMessage("Are you sure you want to delete this task?")
                     setPositiveButton("Yes") { _, _ ->
-                        compositeDisposable.add(
-                            taskDao.delete(it)
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe({
-                                    (parentFragment as? NewTaskFragment)?.deleteTaskSubject?.onNext(taskItem!!)
-                                    requireActivity().supportFragmentManager.popBackStack()
-                                }, { error ->
-                                    Log.e("NewTaskSheet", "Error: ${error.message}")
-                                })
-                        )
+                        TaskRepository.deleteTask(it.id, {
+                            (parentFragment as? NewTaskFragment)?.taskList?.remove(it)
+                            (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
+                            requireActivity().supportFragmentManager.popBackStack()
+                        }, { error ->
+                            Log.e("NewTaskSheet", "Error: ${error.message}")
+                        })
                     }
                     setNegativeButton("No", null)
                 }.show()
@@ -226,20 +216,17 @@ class NewTaskSheet : Fragment() {
 
         val pendingIntent = PendingIntent.getBroadcast(
             requireContext(),
-            taskItem.id,
+            taskItem.id.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         try {
-            val date = DateUtils.parseTaskDate(taskItem.date!!)
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val taskTime = timeFormat.parse(taskItem.time!!)
-
             val calendar = Calendar.getInstance().apply {
-                time = date
+                time = taskItem.date
                 val timeCalendar = Calendar.getInstance().apply {
-                    time = taskTime
+                    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    time = timeFormat.parse(taskItem.time)
                 }
                 set(Calendar.HOUR_OF_DAY, timeCalendar.get(Calendar.HOUR_OF_DAY))
                 set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE))
@@ -256,7 +243,6 @@ class NewTaskSheet : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        compositeDisposable.clear()
     }
 
     private fun showCustomDialogBox() {
@@ -271,17 +257,13 @@ class NewTaskSheet : Fragment() {
         val btnNo: TextView = dialog.findViewById(R.id.btnNo)
         tvMessage.text = "Are you sure you want to delete this task?"
         btnYes.setOnClickListener {
-            compositeDisposable.add(
-                taskDao.delete(taskItem!!)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        (parentFragment as? NewTaskFragment)?.deleteTaskSubject?.onNext(taskItem!!)
-                        requireActivity().supportFragmentManager.popBackStack()
-                    }, { error ->
-                        Log.e("NewTaskSheet", "Error: ${error.message}")
-                    })
-            )
+            TaskRepository.deleteTask(taskItem!!.id, {
+                (parentFragment as? NewTaskFragment)?.taskList?.remove(taskItem!!)
+                (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
+                requireActivity().supportFragmentManager.popBackStack()
+            }, { error ->
+                Log.e("NewTaskSheet", "Error: ${error.message}")
+            })
             dialog.dismiss()
         }
         btnNo.setOnClickListener {

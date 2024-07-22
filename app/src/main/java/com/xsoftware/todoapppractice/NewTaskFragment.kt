@@ -24,16 +24,10 @@ import io.reactivex.rxjava3.subjects.PublishSubject
 
 
 class NewTaskFragment : Fragment() {
+    var taskList = mutableListOf<TaskItem>()
     private var _binding: FragmentNewTaskBinding? = null
     private val binding get() = _binding!!
-    private val compositeDisposable = CompositeDisposable()
-    private lateinit var taskAdapter: TaskAdapter
-    private val taskList = mutableListOf<TaskItem>()
-    val newTaskSubject = PublishSubject.create<TaskItem>()
-    val deleteTaskSubject = PublishSubject.create<TaskItem>()
-    val updateTaskSubject = PublishSubject.create<TaskItem>()
-    private lateinit var db: TaskDatabase
-    private lateinit var taskDao: TaskDao
+    lateinit var taskAdapter: TaskAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,37 +40,28 @@ class NewTaskFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        createNotificationChannel()
         var leftIcon: ImageView = view.findViewById(R.id.left_icon)
         leftIcon.visibility = View.GONE
         var rightIcon: ImageView = view.findViewById(R.id.right_icon)
         rightIcon.visibility = View.GONE
-        var deleteImageIcon :ImageButton = view.findViewById(R.id.delete_icon)
+        var deleteImageIcon: ImageButton = view.findViewById(R.id.delete_icon)
         deleteImageIcon.visibility = View.GONE
 
-        db = Room.databaseBuilder(requireContext().applicationContext, TaskDatabase::class.java, "TaskDatabase")
-            .fallbackToDestructiveMigration()
-            .build()
-        taskDao = db.taskDao()
-
         taskAdapter = TaskAdapter(taskList, { taskItem ->
-            deleteTaskSubject.onNext(taskItem)
+            deleteTask(taskItem)
         }, { taskItem ->
             showEditTaskSheet(taskItem)
         }, { taskItem ->
-            updateTaskSubject.onNext(taskItem)
+            updateTask(taskItem)
         })
         binding.recyclerView.layoutManager = LinearLayoutManager(context)
         binding.recyclerView.adapter = taskAdapter
 
-        compositeDisposable.add(
-            taskDao.getAll()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::handleResponse, { error ->
-                    Log.e("NewTaskFragment", "Error: ${error.message}")
-                })
-        )
+        TaskRepository.getTasks({ tasks ->
+            handleResponse(tasks)
+        }, { error ->
+            Log.e("NewTaskFragment", "Error: ${error.message}")
+        })
 
         binding.newTaskButton.setOnClickListener {
             if (parentFragmentManager.findFragmentByTag("newTaskTag") == null) {
@@ -94,54 +79,27 @@ class NewTaskFragment : Fragment() {
                 parentFragmentManager.popBackStack()
             }
         }
+    }
 
-        compositeDisposable.add(
-            newTaskSubject
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { newTask ->
-                    taskList.add(newTask)
-                    taskAdapter.notifyItemInserted(taskList.size - 1)
-                }
-        )
+    private fun deleteTask(taskItem: TaskItem) {
+        TaskRepository.deleteTask(taskItem.id, {
+            taskList.remove(taskItem)
+            taskAdapter.notifyDataSetChanged()
+        }, { error ->
+            Log.e("NewTaskFragment", "Error: ${error.message}")
+        })
+    }
 
-        compositeDisposable.add(
-            deleteTaskSubject
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { taskItem ->
-                    compositeDisposable.add(
-                        taskDao.delete(taskItem)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe({
-                                taskList.remove(taskItem)
-                                taskAdapter.notifyDataSetChanged()
-                            }, { error ->
-                                Log.e("NewTaskFragment", "Error: ${error.message}")
-                            })
-                    )
-                }
-        )
-
-        compositeDisposable.add(
-            updateTaskSubject
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { updatedTask ->
-                    val index = taskList.indexOfFirst { it.id == updatedTask.id }
-                    if (index != -1) {
-                        compositeDisposable.add(
-                            taskDao.update(updatedTask)
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe({
-                                    taskList[index] = updatedTask
-                                    taskAdapter.notifyItemChanged(index)
-                                }, { error ->
-                                    Log.e("NewTaskFragment", "Error: ${error.message}")
-                                })
-                        )
-                    }
-                }
-        )
+    private fun updateTask(taskItem: TaskItem) {
+        TaskRepository.updateTask(taskItem, {
+            val index = taskList.indexOfFirst { it.id == taskItem.id }
+            if (index != -1) {
+                taskList[index] = taskItem
+                taskAdapter.notifyItemChanged(index)
+            }
+        }, { error ->
+            Log.e("NewTaskFragment", "Error: ${error.message}")
+        })
     }
 
     private fun handleResponse(taskList: List<TaskItem>) {
@@ -166,23 +124,8 @@ class NewTaskFragment : Fragment() {
             .commit()
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Task Channel"
-            val descriptionText = "Channel for Task Notifications"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel("task_channel", name, importance).apply {
-                description = descriptionText
-            }
-            val notificationManager: NotificationManager =
-                requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        compositeDisposable.clear()
     }
 }
