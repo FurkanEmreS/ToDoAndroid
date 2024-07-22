@@ -1,9 +1,6 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.Database
 
 import java.io.Serializable
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import java.util.Date
 
 data class TaskItem(

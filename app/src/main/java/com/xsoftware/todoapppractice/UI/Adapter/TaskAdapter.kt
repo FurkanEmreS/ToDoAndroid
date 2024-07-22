@@ -1,28 +1,22 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.UI.Adapter
 
-import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.ColorDrawable
-import android.os.Handler
-import android.os.Looper
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Recycler
+import com.xsoftware.todoapppractice.Database.TaskItem
+import com.xsoftware.todoapppractice.R
 import com.xsoftware.todoapppractice.databinding.ItemCellBinding
-import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
-import java.util.Timer
-import java.util.TimerTask
 
 class TaskAdapter(
     private val taskList: List<TaskItem>,

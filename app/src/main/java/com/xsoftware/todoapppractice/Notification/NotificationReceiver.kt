@@ -1,10 +1,11 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.Notification
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.xsoftware.todoapppractice.R
 
 class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

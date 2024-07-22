@@ -1,4 +1,4 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.UI
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -9,14 +9,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import androidx.room.Room
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.xsoftware.todoapppractice.databinding.FragmentNewTaskSheetBinding
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.schedulers.Schedulers
 import android.app.AlarmManager
 import android.app.AlertDialog
 import android.app.Dialog
@@ -27,13 +20,17 @@ import android.graphics.drawable.ColorDrawable
 import android.util.Log
 import android.view.Window
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.TextView
+import com.xsoftware.todoapppractice.Database.TaskItem
+import com.xsoftware.todoapppractice.Database.TaskRepository
+import com.xsoftware.todoapppractice.Utils.DateUtils
+import com.xsoftware.todoapppractice.Notification.NotificationReceiver
+import com.xsoftware.todoapppractice.R
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 
-class NewTaskSheet : Fragment() {
+class NewTaskFragment : Fragment() {
     private var _binding: FragmentNewTaskSheetBinding? = null
     private val binding get() = _binding!!
     private var taskItem: TaskItem? = null
@@ -136,8 +133,8 @@ class NewTaskSheet : Fragment() {
 
             if (taskItem == null) {
                 TaskRepository.addTask(newItem, {
-                    (parentFragment as? NewTaskFragment)?.taskList?.add(newItem)
-                    (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyItemInserted((parentFragment as? NewTaskFragment)?.taskList?.size ?: 0 - 1)
+                    (parentFragment as? HomeFragment)?.taskList?.add(newItem)
+                    (parentFragment as? HomeFragment)?.taskAdapter?.notifyItemInserted((parentFragment as? HomeFragment)?.taskList?.size ?: 0 - 1)
                     scheduleNotification(newItem)
                     requireActivity().supportFragmentManager.popBackStack()
                 }, { error ->
@@ -145,10 +142,10 @@ class NewTaskSheet : Fragment() {
                 })
             } else {
                 TaskRepository.updateTask(newItem, {
-                    val index = (parentFragment as? NewTaskFragment)?.taskList?.indexOfFirst { it.id == newItem.id }
+                    val index = (parentFragment as? HomeFragment)?.taskList?.indexOfFirst { it.id == newItem.id }
                     if (index != null && index != -1) {
-                        (parentFragment as? NewTaskFragment)?.taskList?.set(index, newItem)
-                        (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyItemChanged(index)
+                        (parentFragment as? HomeFragment)?.taskList?.set(index, newItem)
+                        (parentFragment as? HomeFragment)?.taskAdapter?.notifyItemChanged(index)
                     }
                     scheduleNotification(newItem)
                     requireActivity().supportFragmentManager.popBackStack()
@@ -161,7 +158,12 @@ class NewTaskSheet : Fragment() {
         if (taskItem != null) {
             binding.name.setText(taskItem!!.name)
             binding.desc.setText(taskItem!!.desc)
-            binding.datePickerButton.text = taskItem!!.date?.let { DateUtils.formatDate(requireContext(), it) } ?: getString(R.string.select_date)
+            binding.datePickerButton.text = taskItem!!.date?.let {
+                DateUtils.formatDate(
+                    requireContext(),
+                    it
+                )
+            } ?: getString(R.string.select_date)
             binding.timePickerButton.text = taskItem!!.time ?: getString(R.string.select_time)
             binding.taskTitle.text = getString(R.string.edit_task)
             toolbarText.text = getString(R.string.edit_task)
@@ -179,7 +181,10 @@ class NewTaskSheet : Fragment() {
                 requireContext(),
                 { _, year, month, dayOfMonth ->
                     val date = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
-                    binding.datePickerButton.text = DateUtils.formatDate(requireContext(), DateUtils.parseDate(requireContext(), date)!!)
+                    binding.datePickerButton.text = DateUtils.formatDate(
+                        requireContext(),
+                        DateUtils.parseDate(requireContext(), date)!!
+                    )
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -210,8 +215,8 @@ class NewTaskSheet : Fragment() {
                     setMessage(getString(R.string.delete_alert))
                     setPositiveButton(getString(R.string.yes)) { _, _ ->
                         TaskRepository.deleteTask(it.id, {
-                            (parentFragment as? NewTaskFragment)?.taskList?.remove(it)
-                            (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
+                            (parentFragment as? HomeFragment)?.taskList?.remove(it)
+                            (parentFragment as? HomeFragment)?.taskAdapter?.notifyDataSetChanged()
                             requireActivity().supportFragmentManager.popBackStack()
                         }, { error ->
                             Log.e("NewTaskSheet", "Error: ${error.message}")
@@ -276,8 +281,8 @@ class NewTaskSheet : Fragment() {
         btnYes.setOnClickListener {
             taskItem?.let {
                 TaskRepository.deleteTask(it.id, {
-                    (parentFragment as? NewTaskFragment)?.taskList?.remove(it)
-                    (parentFragment as? NewTaskFragment)?.taskAdapter?.notifyDataSetChanged()
+                    (parentFragment as? HomeFragment)?.taskList?.remove(it)
+                    (parentFragment as? HomeFragment)?.taskAdapter?.notifyDataSetChanged()
                     requireActivity().supportFragmentManager.popBackStack()
                 }, { error ->
                     Log.e("NewTaskSheet", "Error: ${error.message}")

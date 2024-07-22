@@ -1,4 +1,4 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.UI
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -9,8 +9,8 @@ import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.xsoftware.todoapppractice.R
 import com.xsoftware.todoapppractice.databinding.FragmentLoginTabBinding
-import com.xsoftware.todoapppractice.databinding.FragmentSignUpTabBinding
 
 
 class LoginTabFragment : Fragment() {
@@ -50,7 +50,7 @@ class LoginTabFragment : Fragment() {
         val fragmentContainerId = (view?.parent as? ViewGroup)?.id ?: R.id.fragment_container
 
         if (parentFragmentManager.findFragmentByTag("newTaskFragmentTag") == null) {
-            val fragment = NewTaskFragment()
+            val fragment = HomeFragment()
             parentFragmentManager.beginTransaction().setCustomAnimations(
                 R.anim.slide_in_right,
                 R.anim.slide_out_left,

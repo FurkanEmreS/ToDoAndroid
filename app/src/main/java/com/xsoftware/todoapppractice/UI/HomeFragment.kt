@@ -1,13 +1,9 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.UI
 
 import android.app.Dialog
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -19,18 +15,15 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.room.Room
 import com.google.firebase.auth.FirebaseAuth
+import com.xsoftware.todoapppractice.Database.TaskItem
+import com.xsoftware.todoapppractice.Database.TaskRepository
+import com.xsoftware.todoapppractice.R
+import com.xsoftware.todoapppractice.UI.Adapter.TaskAdapter
 import com.xsoftware.todoapppractice.databinding.FragmentNewTaskBinding
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.schedulers.Schedulers
-import io.reactivex.rxjava3.subjects.PublishSubject
 
 
-
-
-class NewTaskFragment : Fragment() {
+class HomeFragment : Fragment() {
     var taskList = mutableListOf<TaskItem>()
     private var _binding: FragmentNewTaskBinding? = null
     private val binding get() = _binding!!
@@ -79,7 +72,7 @@ class NewTaskFragment : Fragment() {
 
         binding.newTaskButton.setOnClickListener {
             if (parentFragmentManager.findFragmentByTag("newTaskTag") == null) {
-                val fragment = NewTaskSheet()
+                val fragment = NewTaskFragment()
                 parentFragmentManager.beginTransaction().setCustomAnimations(
                     R.anim.slide_in_right,
                     R.anim.slide_out_left,
@@ -131,7 +124,7 @@ class NewTaskFragment : Fragment() {
     }
 
     private fun showEditTaskSheet(taskItem: TaskItem) {
-        val fragment = NewTaskSheet()
+        val fragment = NewTaskFragment()
         val args = Bundle()
         args.putSerializable("taskItem", taskItem)
         fragment.arguments = args

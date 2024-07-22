@@ -1,6 +1,6 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.Utils
 import android.content.Context
-import android.provider.Settings.Global.getString
+import com.xsoftware.todoapppractice.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date

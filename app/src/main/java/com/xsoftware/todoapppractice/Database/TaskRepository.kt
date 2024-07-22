@@ -1,8 +1,9 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.Database
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+
 object TaskRepository {
     private val db = FirebaseFirestore.getInstance()
     private val user get() = FirebaseAuth.getInstance().currentUser

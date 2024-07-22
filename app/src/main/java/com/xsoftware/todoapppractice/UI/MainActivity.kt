@@ -1,9 +1,10 @@
-package com.xsoftware.todoapppractice
+package com.xsoftware.todoapppractice.UI
 
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.xsoftware.todoapppractice.R
 import com.xsoftware.todoapppractice.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -18,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser != null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, NewTaskFragment())
+                .replace(R.id.fragment_container, HomeFragment())
                 .commitNow()
         } else {
             // Kullanıcı oturum açmamışsa LoginTabFragment'i göster
